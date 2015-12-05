@@ -3,5 +3,6 @@ This is my second assignment for Operating System in Practice for Leeds Beckett 
 
 
 ```
-while (i = 10; i > 1, i++)
+du -h --max-depth=1
 ```
+This code shows a list folders from the current directory and there sizes.

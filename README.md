@@ -3,12 +3,10 @@ This is my second assignment for Operating System in Practice for Leeds Beckett 
 
 
 ```
-du --block-size=1M --max-depth 1 $1 | sort -rn  > dir.txt
+du --max-depth 1 -h  | sort -rn  > dir.txt
 ```
-This code shows a list folders from the current directory and there sizes and then sends it to the text file sorted.
+This code shows a list of directories using a traversal script that was given as an example but I am yet to understand how to fully use the traversal method so the output I get isn't what I am looking for an doesn't include the folder sizes.
 
-After trying to use Java to make it look nicer and try and code GUI in java I have found it easier to create the GUI in C.
-The code below is what I have so far and have got it working.
 ```
 #!/bin/bash
 DIALOG_CANCEL=1
@@ -17,7 +15,7 @@ HEIGHT=0
 WIDTH=0
 
 display_result() {
-  dialog --title "$1" \
+  dialog --title "$title" \
     --no-collapse \
     --msgbox "$result" 0 0
 }
@@ -29,11 +27,12 @@ while true; do
     --title "Menu" \
     --clear \
     --cancel-label "Exit" \
-    --menu "Please select:" $HEIGHT $WIDTH 4 \
+    --menu "Please select:" $HEIGHT $WIDTH 5 \
     "1" "Directory Selection" \
     "2" "Comfirm Choice" \
     "3" "Show chosen directory information" \
     "4" "Current Directory" \
+    "5" "Total Directory Size" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
@@ -70,19 +69,63 @@ esac
 
       ;;
     2 ) cd $FILE
-	;;
+	dialog --title 'Confirmation!' --msgbox "Choice of Directory Confirmed!" 5 35
+    ;;
 
-	
-    3 ) du --block-size=1M --max-depth 1 $1 | sort -rn  > dir.txt 
-	result=$(cat dir.txt)
-	display_result "Chosen Directory Information"
+
+    3 ) result=$(sh ./trav.sh)
+	display_result "Ok"
+
       ;;
-       
-    4 ) dialog --title 'Current Directory' --msgbox $FILE 100 50
-      
+
+    4 ) dialog --title 'Current Directory' --msgbox $FILE 10 20
+
+      ;;
+
+    5 ) du -sh > dirtotal.txt
+    result=$(cat dirtotal.txt)
+    display_result "Total directory size"
+
       ;;
 
   esac
 done
 ```
-What this does is open a menu with 4 options. Option 1 allows you to choose a directory you wish to view, then you have to press option 2 which confirms the choice and does a CD commands. Then option 3 puts the information of the chosen directoriy into a text file and then that is opened and viewed. Option 4 shows the user which directory they have chosen to view.
+What this does is open a menu with 5 options. Option 1 allows you to choose a directory you wish to view, then you have to press option 2 which confirms the choice and does a CD commands. Then option 3 puts the information of the chosen directoriy into a text file and then that is opened and viewed. Option 4 shows the user which directory they have chosen to view. Option 5 shows the total size of the current directory.
+
+Below is the code for my current trav.sh
+```
+#!/bin/bash
+# Traverse a directory using depth first traversal technique
+# Usage $0 directorypath
+# otherwise it takes current working directory as directory path
+traverse()
+{
+# Traverse a directory
+
+ls "$1" | while read i
+do
+if [ -d "$1/$i" ]
+then
+echo Directory: $1/$i
+traverse "$1/$i" `expr $2`
+# Calling this as a subshell means that when the called
+# function changes directory, it will not affect our
+# current working directory
+# If you call this in current shell it gives the error
+# bash: traverse: No such file or directory after changing
+# the current directory
+fi
+done
+}
+
+# $1 is directory path
+
+
+# Here we are giving '0' is the current depth of direcory
+traverse . 0
+else
+traverse $1 0
+fi
+```
+

@@ -1,0 +1,158 @@
+When testing the code and making the four script files, main.sh, GUI.sh, traversal.sh and basic.sh they need to be made executable
+by the user so no errors occur with permissions.
+
+This is my final code for my Bash Shell Script for Operating Systems in Practice. I have created four separate shell scripts that
+call each other to make one working program that allows the user the traverse through their PC's directory’s and obtains the information
+of their directory's names, sizes and total size. I have a driver/main class which is the starting point of my program which firstly
+determines if the user has "dialog" installed on their PC. If they do then it will open up a GUI for the user to traverse and look up
+information about their PC directories. If they don't have dialog installed on their PC then the user can use a simple text based
+program which has exactly the same features of the GUI program but without the nice interface. I have a traversal shell script which
+does the traversing within the two user programs that is called and outputted when needed to for the selected directory.
+
+Here is the code for the driver/main class which is the first program that needs to be run as it determines which script will be
+given to the user. What it does is check if dialog is installed and depending on true or false it runs 1 of 2 scripts.
+main.sh code:
+```
+#!/bin/bash
+yum -q list installed dialog &>/dev/null && ./GUI.sh || ./basic.sh
+```
+This is the code for the shell script that has the nice GUI which requires dialog to be installed on the users PC. I used a virtual
+machine of Fedora 14 that I used for my previous assignment and without having to install dialog and not being connected to the
+internet it already had dialog installed already but having the check is always safer and guarantees it working. The GUI script 
+is displayed to the user and they are given four options. Option 1 lets the user choose which directory then want to. Option 2 is
+needed to be chosen to confirm the choice of the user, this does a simple CD. Option 3 shows the file and directory names, sizes
+and total size of all currently chosen directories and files. Option 4 simply shows which directory the user has chosen.
+When choosing option 1 to choose the directory, every time the user does that they need to confirm their choice with option 2.
+The code below is for GUI.sh
+```
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIALOG_CANCEL=1
+DIALOG_ESC=255
+HEIGHT=0
+WIDTH=0
+display_result() {
+  dialog --title "$title" \
+    --no-collapse \
+    --msgbox "$result" 0 0
+}
+while true; do
+  exec 3>&1
+  selection=$(dialog \
+    --backtitle "System Information" \
+    --title "Menu" \
+    --clear \
+    --cancel-label "Exit" \
+    --menu "Please select:" $HEIGHT $WIDTH 5 \
+    "1" "Directory Selection" \
+    "2" "Comfirm Choice" \
+    "3" "Directory Information" \
+    "4" "Current Directory" \
+    2>&1 1>&3)
+  exit_status=$?
+  exec 3>&-
+  case $exit_status in
+    $DIALOG_CANCEL)
+      clear
+      echo "Program terminated."
+      exit
+      ;;
+    $DIALOG_ESC)
+      clear
+      echo "Program aborted." >&2
+      exit 1
+      ;;
+  esac
+  case $selection in
+    0 )
+      clear
+      echo "Program terminated."
+      ;;
+    1 )
+      DIALOG=${DIALOG=dialog}
+FILE=`$DIALOG --stdout --title "Please choose the directory" --fselect $HOME/ 14 48`
+case $? in
+        0)
+                echo "\"$FILE\" chosen";;
+        1)
+                echo "Cancel pressed.";;
+        255)
+                echo "Box closed.";;
+esac
+      ;;
+    2 ) cd $FILE
+    dialog --title 'Confirmation!' --msgbox "Choice of Directory Confirmed!" 5 35
+    ;;
+    3 ) 
+	
+   	chmod +x traversal.sh
+	$DIR/traversal.sh > $DIR/trav.txt
+	COUNT=$(gawk '{ sum += $3 }; END { print sum }' $DIR/trav.txt)
+	echo "total size| " $COUNT >> $DIR/trav.txt
+	dialog --stdout --textbox $DIR/trav.txt 22 70
+      ;;
+    4 ) dialog --title 'Current Directory' --msgbox $FILE 10 20
+      ;;
+  esac
+done
+```
+This script "traversal.sh" is the script the does all of the traversing for my two interface scripts. It works by going through
+all of the folders and looking at all of the files within the directory the user has chosen and then does a simple du with a couple
+of flags to output the names of the directories and files, all of their files in Bytes, KB, MB and GB and then adds uo the total of
+them all at the end. This code is implemented into the GUI.sh and the basic.sh scripts.
+This code below is for traversal.sh
+```
+#!/bin/bash
+depth()
+{
+k=0
+while [ $k -lt $1 2>/dev/null ]
+do
+echo -n " "
+let k++
+done
+}
+traverse()
+{
+ls "$1" | while read i
+do
+depth $1
+if [ -d "$1/$i" ]
+then
+output=$(du -bs -h "$1/$i")
+echo "dir. | " $output
+else
+result=$(du -ab --max-depth=0 -h "$1/$i")
+echo "file | " $result
+fi
+done
+}
+if [ -z "$1" ]
+then
+traverse . 0
+else
+traverse $1 0
+fi
+```
+The "basic.sh" script is the simple text based interface that is shown to the user if they don't have dialog installed on their PC.
+The basic.sh gives the user to choose between 4 options by entering the value of 1, 2, 3 or 4 into the terminal. Option 1 allows the
+user to type in their chosen directory. Option 2 then calls the traversal.sh and outputs the directory information. Option 3 allows
+the user to view which directory they have currently viewing. Option 4 allows the user to exit the program.
+The code below is for the basic.sh
+```
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+select yn in "Choose Directory" "Show Directory Information" "Show Current Directory" "Exit"  ; do
+    case $yn in
+	"Choose Directory" ) read -e -p "Enter the path to the file: " -i "" FILE ;;
+        "Show Directory Information" ) cd $FILE chmod +x traversal.sh
+	$DIR/traversal.sh > $DIR/trav.txt
+	COUNT=$(gawk '{ sum += $3 }; END { print sum }' $DIR/trav.txt)
+	echo "total size| " $COUNT >> $DIR/trav.txt
+	cat $DIR/trav.txt;;
+	
+        "Show Current Directory" ) echo "The current directory is:" $FILE;;
+	"Exit" ) echo "Goodbye!"; exit;;
+    esac
+done
+```

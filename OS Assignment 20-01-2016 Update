@@ -1,0 +1,6 @@
+In this update I will be showuing off a small piece of code that allows me to check if the current PC has dialog
+installed already so it can use my program that uses dialog. If it does have dialog installed then it run my GUI.sh
+file but if it doesn't have dialog installed then it will open up the traversal.sh and simply output the current 
+directories information in the terminal. I will work more on this so the user has a choice of the directory they 
+wish to view the information about. The code is:
+yum -q list installed steam &>/dev/null && ./GUI.sh || ./traversal.sh

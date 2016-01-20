@@ -124,7 +124,7 @@ fi
 ```
 test.sh:
 ```
-yum -q list installed steam &>/dev/null && ./GUI.sh || ./traversal.sh
+yum -q list installed dialog &>/dev/null && ./GUI.sh || ./traversal.sh
 ```
 basic.sh:
 ```

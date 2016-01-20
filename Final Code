@@ -77,11 +77,10 @@ traversal.sh
 depth()
 {
 k=0
-while [ $k -lt $1 ]
+while [ $k -lt $1 2>/dev/null ]
 do
 echo -n " "
 let k++
-#or use k=`expr $k + 1`
 done
 }
 traverse()
@@ -117,7 +116,7 @@ basic.sh
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 select yn in "Choose Directory" "Show Directory Information" "Show Current Directory" "Exit"  ; do
     case $yn in
-	"Choose Directory" ) read -e -p "Enter the path to the file: " -i "/home/lstudent/" FILE ;;
+	"Choose Directory" ) read -e -p "Enter the path to the file: " -i "" FILE ;;
         "Show Directory Information" ) cd $FILE chmod +x traversal.sh
 	$DIR/traversal.sh > $DIR/trav.txt
 	COUNT=$(gawk '{ sum += $3 }; END { print sum }' $DIR/trav.txt)
